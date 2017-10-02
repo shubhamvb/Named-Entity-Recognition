@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[119]:
+# In[9]:
 
 def buildLangModel(filename):
     
@@ -17,13 +17,26 @@ def buildLangModel(filename):
                 
                 for i in range(len(line1)):   
                     if line1[i] in hmap:
-                        hmap[line1[i]][line2[i]] = line3[i]
+                        if line3[i] in hmap[line1[i]]:
+                            hmap[line1[i]][line3[i]] += 1 
+                        else:
+                            hmap[line1[i]][line3[i]] = 1 
                     else:
                         hmap[line1[i]] = dict()
-                        hmap[line1[i]][line2[i]] = line3[i]  
+                        hmap[line1[i]][line3[i]] = 1
                                     
     except StopIteration:
         print("Dataset not in appropriate chunk size")
+    
+    for i in hmap:
+        max_count = 0
+        desired_value = ""
+        for j in hmap[i]:
+            if hmap[i][j] > max_count:
+                max_count = hmap[i][j]
+                desired_value = j 
+        hmap[i] = desired_value
+
     return hmap
 
 
@@ -52,29 +65,23 @@ def generateNER(hmap, filename):
                 line2 = f.readline().split()
                 line3 = f.readline().split()
                 for i in range(len(line1)):   
-                    #print(line1[i])
-                    if line1[i] in hmap and line2[i] in hmap[line1[i]]:
-                        string = hmap[line1[i]][line2[i]]
-                        #print(string)    
-                        if string == "B-PER" or string == "I-PER":
-                            per_list = check(string, prev, "B-PER", "I-PER", per_list, line3[i])
-                        
-                        elif string == "B-ORG" or string == "I-ORG":
-                            org_list = check(string, prev, "B-ORG", "I-ORG", org_list, line3[i])
-                            
-                        elif string == "B-LOC" or string == "I-LOC":
-                            loc_list = check(string, prev, "B-LOC", "I-LOC", loc_list, line3[i])    
-                        
-                        elif string == "B-MISC" or string == "I-MISC":
-                            misc_list = check(string, prev, "B-MISC", "I-MISC", misc_list, line3[i])
-                                
-                        
-                    elif line1[i][0].isupper() and line2[i].startswith("NN"):
-                        
-                        misc_list.append(line3[i]+"-"+line3[i])
-                        
-
-                        
+                    
+                    if line1[i] in hmap:
+                        if "PER" in hmap[line1[i]]:
+                            per_list.append(line3[i] + "-" + line3[i] + " ")
+                        if "LOC" in hmap[line1[i]]:
+                            loc_list.append(line3[i] + "-" + line3[i] + " ")
+                        if "ORG" in hmap[line1[i]]:
+                            org_list.append(line3[i] + "-" + line3[i] + " ")
+                        if "MISC" in hmap[line1[i]]:
+                            misc_list.append(line3[i] + "-" + line3[i] + " ")
+                    
+                    else:
+                        if line1[i].isupper() and len(line1[i])>3:
+                            loc_list.append(line3[i] + "-" + line3[i] + " ")
+                        elif line1[i][0].isupper():
+                            per_list.append(line3[i] + "-" + line3[i] + " ")
+                    
                     prev = string
                    
     except StopIteration:
@@ -112,7 +119,7 @@ print("Hmap generation Complete")
 print("--------------")
 test_file = "/Users/shubhambarhate/Downloads/test.txt"
 misc_list, per_list, org_list, loc_list = generateNER(hmap, test_file)
-output_test_file = "Oct1Test3.txt"
+output_test_file = "Oct1Test6.txt"
 generateTextFile(misc_list, per_list, org_list, loc_list, output_test_file)
 print(len(misc_list)+len(per_list)+len(org_list)+len(loc_list))
 print("File Write complete")
